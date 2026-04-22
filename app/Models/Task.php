@@ -2,15 +2,34 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
-    public function project(){
+    use HasFactory;
+
+    protected $fillable = [
+        'project_id',
+        'title',
+        'description',
+        'status',
+        'priority',
+        'due_date',
+    ];
+
+    protected $casts = [
+        'due_date' => 'date',
+    ];
+
+    public function project()
+    {
         return $this->belongsTo(Project::class);
     }
 
-    public function tag(){
-        return $this->belongsToMany(Tag::class);
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'tag_task')
+            ->withTimestamps();
     }
 }

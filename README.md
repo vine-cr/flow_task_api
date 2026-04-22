@@ -1,59 +1,226 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Flow Task API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API RESTful construída com **Laravel 12** seguindo a arquitetura **MSC (Model-Service-Controller)**. Retorna exclusivamente JSON — sem nenhuma view Blade.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- PHP 8.2+
+- Laravel 12
+- MySQL / PostgreSQL / SQLite
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+> Autenticação **não** é necessária neste projeto.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Instalação
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+git clone <repo>
+cd flow-task-api
 
-## Laravel Sponsors
+composer install
+cp .env.example .env
+php artisan key:generate
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Configure DB_* no .env, depois:
+php artisan migrate:fresh --seed
+php artisan serve
+```
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Arquitetura MSC
 
-## Contributing
+```
+Requisição HTTP
+     ↓
+Controller        → recebe a requisição, valida via FormRequest, retorna JSON
+     ↓
+Service           → contém toda a lógica de negócio
+     ↓
+Model / Eloquent  → acessa o banco de dados
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+- `app/Services/ProjectService.php` — lógica de projetos
+- `app/Services/TaskService.php`    — lógica de tarefas, associação de tags
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Estrutura de arquivos
 
-## Security Vulnerabilities
+```
+app/
+├── Http/
+│   ├── Controllers/Api/
+│   │   ├── ProfileController.php
+│   │   ├── ProjectController.php
+│   │   ├── TaskController.php
+│   │   └── TagController.php
+│   └── Requests/
+│       ├── StoreProfileRequest.php
+│       ├── StoreProjectRequest.php
+│       ├── StoreTaskRequest.php
+│       └── StoreTagRequest.php
+│       ├── UpdateProjectRequest.php
+│       ├── UpdateTaskRequest.php
+│       ├── UpdateTaskStatusRequest.php
+├── Models/
+│   ├── User.php
+│   ├── Profile.php
+│   ├── Project.php
+│   ├── Task.php
+│   └── Tag.php
+└── Services/
+    ├── ProjectService.php
+    └── TaskService.php
+routes/
+└── api.php
+database/
+├── factories/
+│   ├── UserFactory.php
+│   ├── ProfileFactory.php
+│   ├── ProjectFactory.php
+│   ├── TaskFactory.php
+│   └── TagFactory.php
+├── migrations/
+│   ├── ..._create_users_table.php
+│   ├── ..._create_profiles_table.php
+│   ├── ..._create_projects_table.php
+│   ├── ..._create_tasks_table.php
+│   ├── ..._create_tags_table.php
+│   └── ..._create_tag_task_table.php
+└── seeders/
+    ├── DatabaseSeeder.php
+    ├── UserSeeder.php
+    ├── TagSeeder.php
+    ├── ProjectSeeder.php
+    └── TaskSeeder.php
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## Mapa de Rotas
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Projects
+
+| Método | Endpoint | Ação |
+|--------|----------|------|
+| GET | `/api/projects` | Listar projetos (com tasks_count) |
+| POST | `/api/projects` | Criar projeto |
+| GET | `/api/projects/{id}` | Exibir projeto (com tarefas e tags) |
+| PUT | `/api/projects/{id}` | Atualizar projeto |
+| DELETE | `/api/projects/{id}` | Remover projeto (cascata nas tarefas) |
+
+### Tasks
+
+| Método | Endpoint | Ação |
+|--------|----------|------|
+| GET | `/api/projects/{id}/tasks` | Listar tarefas do projeto |
+| POST | `/api/projects/{id}/tasks` | Criar tarefa no projeto |
+| GET | `/api/projects/{id}/tasks/{taskId}` | Exibir tarefa |
+| PUT | `/api/projects/{id}/tasks/{taskId}` | Atualizar tarefa |
+| DELETE | `/api/projects/{id}/tasks/{taskId}` | Remover tarefa |
+| PATCH | `/api/projects/{id}/tasks/{taskId}/status` | Atualizar apenas o status |
+
+### Tags
+
+| Método | Endpoint | Ação |
+|--------|----------|------|
+| GET | `/api/tags` | Listar todas as tags |
+| POST | `/api/tags` | Criar nova tag |
+
+### Associação Task-Tag
+
+| Método | Endpoint | Ação |
+|--------|----------|------|
+| POST | `/api/tasks/{taskId}/tags/{tagId}` | Associar tag a uma tarefa |
+| DELETE | `/api/tasks/{taskId}/tags/{tagId}` | Remover tag de uma tarefa |
+
+### Profile
+
+| Método | Endpoint | Ação |
+|--------|----------|------|
+| GET | `/api/users/{id}/profile` | Exibir perfil do usuário |
+| PUT | `/api/users/{id}/profile` | Criar ou atualizar perfil |
+
+---
+
+## Valores aceitos nos campos
+
+| Campo | Entidade | Valores |
+|-------|----------|---------|
+| `status` | Project | `open`, `in_progress`, `completed` |
+| `status` | Task | `pending`, `in_progress`, `done` |
+| `priority` | Task | `low`, `medium`, `high` |
+| `color` | Tag | Hexadecimal (ex: `#FF5733`) |
+
+---
+
+## Formato das respostas
+
+### Sucesso — Listar recursos (Ex: Projetos)
+```json
+{
+  "data": [
+    { "id": 1, "name": "Meu Projeto", "tasks_count": 5 }
+  ],
+  "message": "Projetos listados com sucesso!"
+}
+```
+
+### Sucesso — criar projeto
+```json
+{
+  "data": { "id": 1, "name": "Novo Projeto" },
+  "message": "Projeto criado com sucesso."
+}
+```
+
+### Erro — não encontrado
+```json
+{
+  "message": "Recurso não encontrado.",
+  "status": 404
+}
+```
+
+### Erro — validação
+```json
+{
+  "message": "Dados inválidos.",
+  "errors": {
+    "name": ["O nome do projeto é obrigatório."]
+  }
+}
+```
+
+---
+
+## Regras de negócio implementadas
+
+1. Ao excluir um projeto, **todas as suas tarefas são removidas em cascata** (configurado na migration com `cascadeOnDelete`).
+2. `status` de Project só aceita: `open`, `in_progress`, `completed`.
+3. `status` de Task só aceita: `pending`, `in_progress`, `done`.
+4. `priority` de Task só aceita: `low`, `medium`, `high`.
+5. **Não é possível associar a mesma tag a uma tarefa mais de uma vez** (chave primária composta na tabela `tag_task` + `syncWithoutDetaching` no Service).
+6. Ao listar projetos, a **contagem de tarefas** é retornada via `withCount('tasks')`.
+
+---
+
+## Comandos úteis
+
+```bash
+# Criar e popular o banco do zero
+php artisan migrate:fresh --seed
+
+# Listar todas as rotas da API
+php artisan route:list --path=api
+
+# Criar um Form Request
+php artisan make:request NomeDoRequest
+
+# Criar um Seeder
+php artisan make:seeder NomeDoSeeder
+```

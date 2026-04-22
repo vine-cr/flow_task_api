@@ -1,26 +1,73 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('projects', 'ProjectController@index');
-Route::post('projects', 'ProjectController@store');
-Route::get('projects/{id}', 'ProjectController@show');
-Route::put('projects/{id}', 'ProjectController@update');
-Route::delete('projects/{id}', 'ProjectController@destroy');
+/*
+|--------------------------------------------------------------------------
+| Flow Task API — Rotas
+|--------------------------------------------------------------------------
+*/
 
-Route::get('projects/{id}/tasks', 'ProjectTaskController@index');
-Route::post('projects/{id}/tasks', 'ProjectTaskController@store');
-Route::get('projects/{id}/tasks/{id}', 'ProjectTaskController@show');
-Route::put('projects/{id}/tasks/{id}', 'ProjectTaskController@update');
-Route::delete('projects/{id}/tasks/{id}', 'ProjectTaskController@destroy');
-Route::patch('projects/{id}/tasks/{id}/complete', 'ProjectTaskController@complete');
+// -------------------------------------------------------------------------
+// Projects — CRUD completo
+// GET    /api/projects
+// POST   /api/projects
+// GET    /api/projects/{project}
+// PUT    /api/projects/{project}
+// DELETE /api/projects/{project}
+// -------------------------------------------------------------------------
+Route::apiResource('projects', ProjectController::class);
 
-Route::get('tags', 'TagController@index');
-Route::post('tags', 'TagController@store');
+// -------------------------------------------------------------------------
+// Tasks — aninhadas em Projects (sem shallow)
+// GET    /api/projects/{project}/tasks
+// POST   /api/projects/{project}/tasks
+// GET    /api/projects/{project}/tasks/{task}
+// PUT    /api/projects/{project}/tasks/{task}
+// DELETE /api/projects/{project}/tasks/{task}
+// -------------------------------------------------------------------------
+Route::apiResource('projects.tasks', TaskController::class);
 
-Route::post('tasks/{taskid}/tags/{tagid}', 'TaskTagController@store');
-Route::delete('tasks/{taskid}/tags/{tagid}', 'TaskTagController@destroy');
+// -------------------------------------------------------------------------
+// Task status — rota extra para atualizar apenas o status
+// PATCH  /api/projects/{project}/tasks/{task}/status
+// -------------------------------------------------------------------------
+Route::patch(
+    'projects/{project}/tasks/{task}/status',
+    [TaskController::class, 'updateStatus']
+)->name('projects.tasks.updateStatus');
 
-Route::get('tasks/{taskid}/tags/{tagid}', 'TaskTagController@show');
-Route::put('tasks/{taskid}/tags/{tagid}', 'TaskTagController@update');
+// -------------------------------------------------------------------------
+// Associação Task <-> Tag
+// POST   /api/tasks/{task}/tags/{tag}
+// DELETE /api/tasks/{task}/tags/{tag}
+// -------------------------------------------------------------------------
+Route::post(
+    'tasks/{task}/tags/{tag}',
+    [TaskController::class, 'attachTag']
+)->name('tasks.tags.attach');
+
+Route::delete(
+    'tasks/{task}/tags/{tag}',
+    [TaskController::class, 'detachTag']
+)->name('tasks.tags.detach');
+
+// -------------------------------------------------------------------------
+// Tags — apenas listagem e criação conforme documento
+// GET    /api/tags
+// POST   /api/tags
+// -------------------------------------------------------------------------
+Route::get('tags',  [TagController::class, 'index'])->name('tags.index');
+Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+
+// -------------------------------------------------------------------------
+// Profile — via users/{user}/profile
+// GET    /api/users/{user}/profile
+// PUT    /api/users/{user}/profile
+// -------------------------------------------------------------------------
+Route::get('users/{user}/profile', [ProfileController::class, 'show'])->name('users.profile.show');
+Route::put('users/{user}/profile', [ProfileController::class, 'upsert'])->name('users.profile.upsert');
